@@ -3,13 +3,22 @@ import ReleaseTransformations._
 lazy val jawnSettings = Seq(
   organization := "org.spire-math",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0-RC2"),
+  crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0"),
 
   resolvers += Resolver.sonatypeRepo("releases"),
-  libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.0.0" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.13.2" % "test"
-  ),
+  libraryDependencies ++= {
+    if(scalaVersion.value == "2.12.0") {
+      Seq(
+        "org.scalatest" % "scalatest_2.12.0-RC2" % "3.0.0" % "test",
+        "org.scalacheck" % "scalacheck_2.12.0-RC2" % "1.13.2" % "test"
+      )
+    } else {
+      Seq(
+        "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+        "org.scalacheck" %% "scalacheck" % "1.13.2" % "test"
+      )
+    }
+  },
   scalacOptions ++= Seq(
     //"-Yinline-warnings",
     "-deprecation",
@@ -75,11 +84,16 @@ lazy val root = project.in(file("."))
   .settings(jawnSettings: _*)
   .settings(noPublish: _*)
 
-lazy val parser = project.in(file("parser"))
-  .settings(name := "parser")
+lazy val parserCross = crossProject2.in(file("parser"))
   .settings(moduleName := "jawn-parser")
   .settings(jawnSettings: _*)
+  .nativeSettings(
+    moduleName := "jawn-parser-native"
+  )
   .disablePlugins(JmhPlugin)
+
+lazy val parser = parserCross.jvm
+lazy val parserNATIVE = parserCross.native
 
 lazy val ast = project.in(file("ast"))
   .dependsOn(parser % "compile->compile;test->test")
